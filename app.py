@@ -3,14 +3,17 @@ import feedparser
 
 st.set_page_config(page_title="Startup News AU", layout="wide")
 
-# ---------- MODERN NEWS UI ----------
+# ---------- STYLING ----------
 st.markdown("""
 <style>
-body { background-color: #f5f7fb; }
+body {
+    background-color: #f5f7fb;
+}
 
 .header {
     padding: 20px 0;
     border-bottom: 1px solid #eaeaea;
+    margin-bottom: 20px;
 }
 
 .title {
@@ -21,6 +24,12 @@ body { background-color: #f5f7fb; }
 .subtitle {
     color: #666;
     margin-top: 4px;
+}
+
+.section-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 25px 0 15px 0;
 }
 
 .card {
@@ -64,12 +73,6 @@ body { background-color: #f5f7fb; }
     margin-top: 8px;
 }
 
-.section-title {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 20px 0;
-}
-
 .top-list {
     background: white;
     border-radius: 14px;
@@ -88,19 +91,18 @@ body { background-color: #f5f7fb; }
     font-size: 18px;
     color: #999;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
 # ---------- HEADER ----------
 st.markdown("""
 <div class="header">
-<div class="title">STARTUP NEWS AU</div>
-<div class="subtitle">Australia’s Home of Startup & Innovation News</div>
+    <div class="title">STARTUP NEWS AU</div>
+    <div class="subtitle">Australia’s Home of Startup & Innovation News</div>
 </div>
 """, unsafe_allow_html=True)
 
-# ---------- SOURCES ----------
+# ---------- RSS SOURCES ----------
 RSS_FEEDS = [
     "https://www.startupdaily.net/feed/",
     "https://www.smartcompany.com.au/feed/",
@@ -109,46 +111,54 @@ RSS_FEEDS = [
     "https://www.businessinsider.com.au/feed"
 ]
 
-# ---------- FETCH ----------
+# ---------- FETCH ARTICLES ----------
 @st.cache_data(ttl=600)
 def fetch_articles():
     articles = []
+
     for url in RSS_FEEDS:
         feed = feedparser.parse(url)
+
         for entry in feed.entries[:10]:
+            image = None
+
+            # Try to extract image safely
+            if "media_content" in entry:
+                image = entry.media_content[0].get("url")
+
             articles.append({
                 "title": entry.title,
                 "link": entry.link,
                 "summary": getattr(entry, "summary", ""),
-                "image": entry.get("media_content", [{}])[0].get("url") if entry.get("media_content") else None,
+                "image": image,
                 "source": feed.feed.get("title", "Source")
             })
+
     return articles
 
 articles = fetch_articles()
 
-# ---------- GRID ----------
+# ---------- LATEST NEWS GRID ----------
 st.markdown('<div class="section-title">Latest News</div>', unsafe_allow_html=True)
 
 cols = st.columns(3)
 
 for i, a in enumerate(articles[:9]):
-    col = cols[i % 3]
-
-    with col:
+    with cols[i % 3]:
         st.markdown(f"""
         <div class="card">
             {f'<img src="{a["image"]}" />' if a.get("image") else ''}
+            
             <div class="card-body">
                 <div class="category">Startup</div>
                 <h3>{a['title']}</h3>
-                <p>{a['summary'][:100]}</p>
+                <p>{a['summary'][:120]}</p>
                 <div class="meta">{a['source']}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-# ---------- TOP 10 ----------
+# ---------- TOP 10 STORIES ----------
 st.markdown('<div class="section-title">Top 10 Stories</div>', unsafe_allow_html=True)
 
 st.markdown('<div class="top-list">', unsafe_allow_html=True)
